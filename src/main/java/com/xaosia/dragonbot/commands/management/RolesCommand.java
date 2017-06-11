@@ -22,8 +22,7 @@ public class RolesCommand extends Command {
 
             roleList.append("Name: " + role.getName() + "\n");
             roleList.append("ID: " + role.getId() + "\n");
-            roleList.append("Permissions: " + role.getPermissions());
-
+            //todo: permissions
         }
 
         int time = 5 * 60;
