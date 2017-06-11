@@ -1,5 +1,7 @@
 package com.xaosia.dragonbot.commands;
 
+import com.xaosia.dragonbot.commands.general.MemeCommand;
+import com.xaosia.dragonbot.commands.general.uhcfriends.SeniorsCommand;
 import com.xaosia.dragonbot.commands.management.*;
 import com.xaosia.dragonbot.commands.master.DisableCommand;
 import com.xaosia.dragonbot.commands.master.EnableCommand;
@@ -118,7 +120,8 @@ public class CommandHandler extends ListenerAdapter {
     public void registerCommands() {
 
         //general
-        //cmds.add(new MemeCommand());
+        cmds.add(new MemeCommand());
+        cmds.add(new SeniorsCommand());
 
         //management
         cmds.add(new AddTrustedCommand());
