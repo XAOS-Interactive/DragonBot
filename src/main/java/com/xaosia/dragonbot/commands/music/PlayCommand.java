@@ -10,10 +10,7 @@ import com.xaosia.dragonbot.guilds.GuildManager;
 import com.xaosia.dragonbot.utils.Chat;
 import com.xaosia.dragonbot.exceptions.CommandException;
 import com.xaosia.dragonbot.music.VideoThread;
-import net.dv8tion.jda.core.entities.Guild;
-import net.dv8tion.jda.core.entities.Member;
-import net.dv8tion.jda.core.entities.Message;
-import net.dv8tion.jda.core.entities.TextChannel;
+import net.dv8tion.jda.core.entities.*;
 
 public class PlayCommand extends Command {
 
@@ -37,8 +34,16 @@ public class PlayCommand extends Command {
             return false;
         } else if (args.length >= 1) {
             if (guild.getSelfMember().getVoiceState().getChannel() == null) {
-                Chat.sendMessage(sender.getAsMention() + " The bot is not in a voice channel!", channel, 10);
-                return true;
+                 //rejoin the voice channel
+                try {
+                    VoiceChannel voiceChannel = Dragon.getClient().getVoiceChannelById(GuildManager.getGuildConfig(guild).getMusicChannelId());
+                    if (voiceChannel != null) {
+                        voiceChannel.getGuild().getAudioManager().openAudioConnection(voiceChannel);
+                    }
+                } catch (Exception ex) {
+                    Chat.sendMessage(sender.getAsMention() + " The bot is not in a voice channel!", channel, 10);
+                    return true;
+                }
             }
             if (!guild.getSelfMember().getVoiceState().getChannel().equals(sender.getVoiceState().getChannel())) {
                 Chat.sendMessage(sender.getAsMention() + " You must be in the music channel in order to play songs!", channel, 10);
