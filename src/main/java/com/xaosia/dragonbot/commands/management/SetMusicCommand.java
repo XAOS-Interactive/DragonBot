@@ -5,10 +5,7 @@ import com.xaosia.dragonbot.commands.Command;
 import com.xaosia.dragonbot.exceptions.CommandException;
 import com.xaosia.dragonbot.guilds.GuildManager;
 import com.xaosia.dragonbot.utils.Chat;
-import net.dv8tion.jda.core.entities.Guild;
-import net.dv8tion.jda.core.entities.Member;
-import net.dv8tion.jda.core.entities.Message;
-import net.dv8tion.jda.core.entities.TextChannel;
+import net.dv8tion.jda.core.entities.*;
 
 public class SetMusicCommand extends Command {
 
@@ -35,7 +32,15 @@ public class SetMusicCommand extends Command {
         try {
             GuildManager.getGuildConfig(guild).save();
             Chat.sendMessage(sender.getAsMention() + " The music channel has been set to " + guild.getVoiceChannelById(channelId).getName() + ".", channel, 20);
-
+            try {
+                VoiceChannel voiceChannel = Dragon.getClient().getVoiceChannelById(channelId);
+                if (voiceChannel != null) {
+                    voiceChannel.getGuild().getAudioManager().openAudioConnection(voiceChannel);
+                }
+                ToggleMusicCommand.canQueue.put(guild.getId(), true);
+            } catch (Exception ex) {
+                //do nothing
+            }
         } catch (Exception ex) {
             Dragon.getLog().error("Failed to update config for guild: " + guild.getId());
         }

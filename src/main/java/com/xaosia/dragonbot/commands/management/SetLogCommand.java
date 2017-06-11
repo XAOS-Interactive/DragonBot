@@ -13,7 +13,7 @@ import net.dv8tion.jda.core.entities.TextChannel;
 public class SetLogCommand extends Command {
 
     public SetLogCommand() {
-        super("setlogchannel", CommandType.TRUSTED, "<Channel>");
+        super("setlog", CommandType.TRUSTED, "<Channel>");
     }
 
     @Override
