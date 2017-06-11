@@ -1,7 +1,13 @@
 package com.xaosia.dragonbot.commands;
 
+import com.xaosia.dragonbot.commands.management.*;
+import com.xaosia.dragonbot.commands.master.DisableCommand;
+import com.xaosia.dragonbot.commands.master.EnableCommand;
+import com.xaosia.dragonbot.commands.master.ReloadCommand;
+import com.xaosia.dragonbot.commands.music.*;
 import com.xaosia.dragonbot.exceptions.CommandException;
-import com.xaosia.dragonbot.utils.Bot;
+import com.xaosia.dragonbot.guilds.GuildManager;
+import com.xaosia.dragonbot.utils.PermissionsUtil;
 import com.xaosia.dragonbot.utils.Chat;
 import net.dv8tion.jda.core.entities.*;
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent;
@@ -24,12 +30,23 @@ public class CommandHandler extends ListenerAdapter {
         User user = message.getAuthor();
         TextChannel channel = event.getChannel();
 
-        if (message.getRawContent() != null && message.getContent().startsWith(Dragon.getConfig().getCommandPrefix())) {
-            if (Dragon.getConfig().getBlockedUsers().contains(sender.getUser().getId()) && !Dragon.getConfig().isTrusted(sender)) {
+
+        if (message.getRawContent() != null && (message.getContent().startsWith(GuildManager.getGuildConfig(guild).getPrefix()) ||
+                message.getContent().startsWith(Dragon.getConfig().getCommandPrefix()))) {
+            if (Dragon.getConfig().getBlockedUsers().contains(sender.getUser().getId())) {
                 Chat.removeMessage(message);
-                sender.getUser().openPrivateChannel().queue(c ->
-                        c.sendMessage("You are blacklisted from using bot commands. " +
-                                "If you believe this is an error, please contact spacetrain31.").queue(m -> m.getPrivateChannel().close()));
+                Chat.sendPM("You are blacklisted from using bot commands. " +
+                        "If you believe this is an error, please contact spacetrain31.", sender.getUser());
+                return;
+            }
+
+            //make sure the bot is setup
+            if (!GuildManager.getGuildConfig(guild).isSetup() && (!PermissionsUtil.hasAdministrator(sender) ||
+                    !PermissionsUtil.isBotCreator(sender.getUser()))) {
+
+                Chat.sendMessage(sender.getAsMention() + "I have not been setup yet, I will not function properly until I have been setup, " +
+                        "a server owner has to first set me up.", channel);
+
                 return;
             }
 
@@ -45,15 +62,15 @@ public class CommandHandler extends ListenerAdapter {
 
             if (cmd == null) return; //invalid command
 
-            if (cmd.getType() == Command.CommandType.MASTER && !sender.getUser().equals(Bot.getCreator())) {
+            if (cmd.getType() == Command.CommandType.MASTER && !PermissionsUtil.isBotCreator(sender.getUser())) {
                 return;
             }
 
-            if (cmd.getType() == Command.CommandType.TRUSTED && !Dragon.getConfig().isTrusted(sender)) {
+            if (cmd.getType() == Command.CommandType.TRUSTED && !PermissionsUtil.isTrusted(guild, sender)) {
                 return;
             }
 
-            if (cmd.getType() == Command.CommandType.MUSIC && !Dragon.getConfig().getMusicCommandChannels().contains(channel.getId())) {
+            if (cmd.getType() == Command.CommandType.MUSIC && !GuildManager.getGuildConfig(guild).getMusicChannelId().equals(channel.getId())) {
                 return;
             }
 
@@ -104,15 +121,24 @@ public class CommandHandler extends ListenerAdapter {
         //cmds.add(new MemeCommand());
 
         //management
-
+        cmds.add(new AddTrustedCommand());
+        cmds.add(new SetCmdCommand());
+        cmds.add(new SetLogCommand());
+        cmds.add(new SetMusicCommand());
+        cmds.add(new ToggleMusicCommand());
 
         //master
-        //cmds.add(new DisableCommand(this));
-        //cmds.add(new EnableCommand(this));
-        //cmds.add(new ReloadCommand());
+        cmds.add(new DisableCommand(this));
+        cmds.add(new EnableCommand(this));
+        cmds.add(new ReloadCommand());
 
         //music
-        //todo: redo music commands
+        cmds.add(new NowPlayingCommand());
+        cmds.add(new PlayCommand());
+        cmds.add(new QueueCommand());
+        cmds.add(new RandomCommand());
+        cmds.add(new SkipCommand());
+        cmds.add(new VolumeCommand());
     }
 
 

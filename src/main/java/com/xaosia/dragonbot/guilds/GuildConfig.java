@@ -5,6 +5,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import com.xaosia.dragonbot.Dragon;
+import com.xaosia.dragonbot.utils.Chat;
 import net.dv8tion.jda.core.entities.Guild;
 import net.dv8tion.jda.core.entities.Member;
 import net.dv8tion.jda.core.entities.Role;
@@ -13,33 +14,40 @@ import org.json.JSONObject;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 public class GuildConfig {
 
-    private static File configFile;
+    private File configFile;
     private static Object file;
     private static JSONArray fileObj;
 
-    private String id, prefix, logId, commandId, musicId;
-    private JSONArray mutedUsers;
+    private String id, prefix, logChannel, commandId, musicChannelId, mutedRoleId;
+    private List<String> mutedUsers, trustedRoles;
+    private HashMap<String, String> memes;
+    private boolean setup, filterSpam;
 
     public GuildConfig(String id) {
         this.id = id;
         this.prefix = "!";
-        this.logId = "";
+        this.logChannel = "";
         this.commandId = "";
-        this.musicId = "";
+        this.musicChannelId = "";
+        this.mutedRoleId = "";
 
-        this.mutedUsers = new JSONArray();
-
+        this.mutedUsers = new ArrayList<>();
+        this.trustedRoles = new ArrayList<>();
+        this.memes = new HashMap<>();
+        this.filterSpam = false;
+        this.setup = false;
     }
 
     public static Object getFile() {
         return file;
     }
 
-    public static File getConfigFile() {
+    public File getConfigFile() {
         return configFile;
     }
 
@@ -48,25 +56,119 @@ public class GuildConfig {
         configFile = new File(Dragon.getGuildsDir(), id + ".json");
 
         if (!configFile.exists()) {
-            Dragon.getLog().info("Creating new guild config for guild: " + id);
             configFile.createNewFile();
+            save();
+            Dragon.getLog().info("Created new guild config for guild: " + id);
         }
 
-        Gson gson = new Gson();
-        JsonElement json = gson.fromJson(new FileReader(configFile), JsonElement.class);
+        RandomAccessFile fin;
+        byte[] buffer;
 
-        file = gson.toJson(json);
-        fileObj = new JSONArray(file.toString());
+        fin = new RandomAccessFile(configFile, "r");
+        buffer = new byte[(int) fin.length()];
+        fin.readFully(buffer);
+        fin.close();
+
+        String json = new String(buffer);
+        GuildConfig file = new Gson().fromJson(json, GuildConfig.class);
+
+        this.prefix = file.prefix;
+        this.logChannel = file.logChannel;
+        this.commandId = file.commandId;
+        this.musicChannelId = file.musicChannelId;
+        this.mutedRoleId = file.mutedRoleId;
+
+        this.mutedUsers = file.mutedUsers;
+        this.trustedRoles = file.trustedRoles;
+        this.memes = file.memes;
+        this.filterSpam = file.filterSpam;
+        this.setup = file.setup;
+
         //Core.log.info(file.toString());
     }
 
-    private static void save(Object obj) throws IOException {
-        BufferedWriter fout = new BufferedWriter(new FileWriter(configFile));
-        fout.write(new GsonBuilder().setPrettyPrinting().create().toJson(new JsonParser().parse(obj.toString()).getAsJsonArray()));
+    public void save() throws IOException {
+        BufferedWriter fout;
+        fout = new BufferedWriter(new FileWriter(configFile));
+        fout.write(new GsonBuilder().setPrettyPrinting().create().toJson(this));
         fout.close();
+    }
 
-        file = obj;
-        fileObj = new JSONArray(file.toString());
+    public String getPrefix() {
+        return prefix;
+    }
+
+    public void setPrefix(String prefix) {
+        this.prefix = prefix;
+    }
+
+    public String getLogChannel() {
+        return logChannel;
+    }
+
+    public void setLogChannel(String logChannel) {
+        this.logChannel = logChannel;
+    }
+
+    public String getCommandId() {
+        return commandId;
+    }
+
+    public void setCommandId(String commandId) {
+        this.commandId = commandId;
+    }
+
+    public String getMusicChannelId() {
+        return musicChannelId;
+    }
+
+    public void setMusicChannelId(String musicChannelId) {
+        this.musicChannelId = musicChannelId;
+    }
+
+    public String getMutedRoleId() {
+        return mutedRoleId;
+    }
+
+    public void setMutedRoleId(String mutedRoleId) {
+        this.mutedRoleId = mutedRoleId;
+    }
+
+    public List<String> getMutedUsers() {
+        return mutedUsers;
+    }
+
+    public List<String> getTrustedRoles() {
+        return trustedRoles;
+    }
+
+    public HashMap<String, String> getMemes() {
+        return memes;
+    }
+
+    public boolean isFilterSpamEnabled() {
+        return filterSpam;
+    }
+
+    public void setFilterSpam(boolean filterSpam) {
+        this.filterSpam = filterSpam;
+    }
+
+    public boolean isTrusted(Member member) {
+        for (String id : getTrustedRoles()) {
+            if (Dragon.getDiscord().userHasRoleId(member, id)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean isSetup() {
+        return setup;
+    }
+
+    public void setSetup(boolean setup) {
+        this.setup = setup;
     }
 
 }

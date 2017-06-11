@@ -65,6 +65,10 @@ public class Chat {
         sendMessage(new MessageBuilder().setEmbed(embed).build(), channel, time);
     }
 
+    public static void sendMessage(MessageEmbed embed, MessageChannel channel) {
+        sendMessage(new MessageBuilder().setEmbed(embed).build(), channel);
+    }
+
     public static void sendMessage(Message message, MessageChannel channel, long time) {
         channel.sendMessage(message).queue(m -> removeMessage(m, time));
     }
@@ -83,5 +87,10 @@ public class Chat {
 
     public static String getTag(User user) {
         return user.getName() + '#' + user.getDiscriminator();
+    }
+
+    public static void sendPM(CharSequence string, User user) {
+        user.openPrivateChannel().queue(c ->
+                c.sendMessage(new MessageBuilder().appendFormat(string.toString()).build()).queue(m -> m.getPrivateChannel().close()));
     }
 }

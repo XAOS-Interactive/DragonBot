@@ -40,13 +40,17 @@ public class Bot {
         }
     }
 
+    public static void updateStatus() {
+        Dragon.getDiscord().streaming(Dragon.getClient().getGuilds().size() + " guilds", "https://dragonbot.xaosia.com");
+    }
+
     public static Guild getMainGuild() {
         return Dragon.getClient().getGuildById(Dragon.getConfig().getMainGuildID());
     }
 
-    public static void logGuildMessage(MessageBuilder message) {
+    public static void logGuildMessage(String message) {
         if (Dragon.getConfig().getLogChannel() != null) {
-            getMainGuild().getTextChannelById(Dragon.getConfig().getLogChannel()).sendMessage(message.build()).queue();
+            Chat.sendMessage(message, getMainGuild().getTextChannelById(Dragon.getConfig().getLogChannel()));
         }
     }
 

@@ -5,17 +5,21 @@ import com.arsenarsen.lavaplayerbridge.PlayerManager;
 import com.arsenarsen.lavaplayerbridge.libraries.LibraryFactory;
 import com.arsenarsen.lavaplayerbridge.libraries.UnknownBindingException;
 import com.sedmelluq.discord.lavaplayer.jdaudp.NativeAudioSendFactory;
+import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
+import com.sedmelluq.discord.lavaplayer.player.event.AudioEventAdapter;
+import com.sedmelluq.discord.lavaplayer.source.soundcloud.SoundCloudAudioTrack;
+import com.sedmelluq.discord.lavaplayer.source.youtube.YoutubeAudioTrack;
+import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
+import com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason;
 import com.xaosia.dragonbot.commands.CommandHandler;
+import com.xaosia.dragonbot.commands.music.SkipCommand;
 import com.xaosia.dragonbot.events.chat.ChatEvents;
 import com.xaosia.dragonbot.events.server.ServerEvents;
-import com.xaosia.dragonbot.utils.Config;
-import com.xaosia.dragonbot.utils.IDiscordClient;
-import com.xaosia.dragonbot.utils.LoggerAdapter;
-import net.dv8tion.jda.core.AccountType;
-import net.dv8tion.jda.core.JDA;
-import net.dv8tion.jda.core.JDABuilder;
-import net.dv8tion.jda.core.OnlineStatus;
-import net.dv8tion.jda.core.entities.Game;
+import com.xaosia.dragonbot.events.voice.VoiceEvents;
+import com.xaosia.dragonbot.guilds.GuildManager;
+import com.xaosia.dragonbot.utils.*;
+import net.dv8tion.jda.core.*;
+import net.dv8tion.jda.core.entities.*;
 import net.dv8tion.jda.core.exceptions.RateLimitedException;
 import net.dv8tion.jda.core.hooks.ListenerAdapter;
 import net.dv8tion.jda.core.requests.RestAction;
@@ -95,9 +99,10 @@ public class Dragon {
                 addListener(commandHandler);
                 addListener(new ChatEvents());
                 addListener(new ServerEvents());
+                addListener(new VoiceEvents());
 
                 musicManager = PlayerManager.getPlayerManager(LibraryFactory.getLibrary(client));
-                //registerEvents(); //todo: register music events
+                registerMusicManager();
             } catch (RateLimitedException e) {
                 Thread.sleep(e.getRetryAfter());
             }
@@ -163,7 +168,9 @@ public class Dragon {
 
             try {
 
-                //todo: shutdown the music manager
+                shutdownMusicManager();
+
+                //TODO Remove all messages that are waiting on task timers
 
                 client.removeEventListener(new ChatEvents(), new ServerEvents());
 
@@ -216,6 +223,89 @@ public class Dragon {
         for (ListenerAdapter listener : listeners) {
             client.removeEventListener(listener);
         }
+    }
+
+    private static void shutdownMusicManager() {
+        if (!Bot.nowPlaying.isEmpty()) {
+            if (!SkipCommand.votes.isEmpty()) {
+                SkipCommand.votes.clear();
+            }
+        }
+
+        if (discord.getConnectedVoiceChannels().size() > 0) {
+            for (VoiceChannel voiceChannel : discord.getConnectedVoiceChannels()) {
+                getMusicManager().getPlayer(voiceChannel.getGuild().getId()).getPlaylist().clear();
+                getMusicManager().getPlayer(voiceChannel.getGuild().getId()).skip();
+            }
+
+            Bot.nowPlaying.forEach(Chat::removeMessage);
+        }
+    }
+
+    public static void registerMusicManager() {
+        musicManager.getPlayerCreateHooks().register(player -> player.addEventListener(new AudioEventAdapter() {
+            @Override
+            public void onTrackStart(AudioPlayer aplayer, AudioTrack atrack) {
+                Guild guild = client.getGuildById(player.getGuildId());
+                String id = GuildManager.getGuildConfig(guild).getCommandId();
+                    if (id != null) {
+                        TextChannel channel = client.getTextChannelById(id);
+                        if (channel != null) {
+                            AudioPlayer song = getMusicManager().getPlayer(channel.getGuild().getId()).getPlayer();
+                            User user = getClient().getUserById(player.getPlayingTrack().getMeta().get("requester").toString());
+
+                            if (song == aplayer || song.getPlayingTrack() == atrack) {
+                                EmbedBuilder embed = Chat.getEmbed();
+
+                                if (atrack instanceof YoutubeAudioTrack) {
+                                    embed.addField("**Now playing** - YouTube", "**[" + atrack.getInfo().title + "](" + atrack.getInfo().uri + ")** " +
+                                            "`[" + Bot.millisToTime(song.getPlayingTrack().getDuration(), false) + "]`", true)
+                                            .setImage("https://img.youtube.com/vi/" + song.getPlayingTrack().getIdentifier() + "/mqdefault.jpg")
+                                            .setFooter("Queued by: @" + Chat.getFullName(user), null)
+                                            .setColor(Chat.CUSTOM_GREEN);
+                                } else if (atrack instanceof SoundCloudAudioTrack) {
+                                    embed.addField("**Now playing** - SoundCloud", "**[" + atrack.getInfo().title + "](" + atrack.getInfo().uri + ")** " +
+                                            "`[" + Bot.millisToTime(song.getPlayingTrack().getDuration(), false) + "]`", true)
+                                            .setImage("https://cdn.discordapp.com/attachments/233737506955329538/290302284381028352/soundcloud_icon.png") //I made this -Matrix
+                                            .setFooter("Queued by: @" + Chat.getFullName(user), null)
+                                            .setColor(Chat.CUSTOM_DARK_ORANGE);
+                                } else {
+                                    embed.addField("**Now playing** - ???", "**[" + atrack.getInfo().title + "](" + atrack.getInfo().uri + ")** " +
+                                            "`[" + Bot.millisToTime(song.getPlayingTrack().getDuration(), false) + "]`", true)
+                                            .setFooter("Queued by: @" + Chat.getFullName(user), null)
+                                            .setColor(Chat.CUSTOM_GREEN);
+                                }
+
+                                Message msg = channel.sendMessage(new MessageBuilder().setEmbed(embed.build()).build()).complete();
+
+                                SkipCommand.votes.clear();
+                                Bot.nowPlaying.add(msg);
+                            }
+                        }
+                    }
+            }
+
+            @Override
+            public void onTrackEnd(AudioPlayer player, AudioTrack track, AudioTrackEndReason endReason) {
+                SkipCommand.votes.clear();
+
+                for (Message msg : Bot.nowPlaying) {
+                    if (Bot.nowPlaying.isEmpty()) {
+                        break;
+                    }
+
+                    if (msg != null) {
+                        AudioPlayer guildPlayer = getMusicManager().getPlayer(msg.getGuild().getId()).getPlayer();
+
+                        if (guildPlayer == player) {
+                            Chat.removeMessage(msg);
+                            Bot.nowPlaying.remove(msg);
+                            break;
+                        }
+                    }
+                }
+            }
+        }));
     }
 
     public static Dragon get() {
