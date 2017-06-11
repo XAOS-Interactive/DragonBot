@@ -35,15 +35,8 @@ public class PlayCommand extends Command {
         } else if (args.length >= 1) {
             if (guild.getSelfMember().getVoiceState().getChannel() == null) {
                  //rejoin the voice channel
-                try {
-                    VoiceChannel voiceChannel = Dragon.getClient().getVoiceChannelById(GuildManager.getGuildConfig(guild).getMusicChannelId());
-                    if (voiceChannel != null) {
-                        voiceChannel.getGuild().getAudioManager().openAudioConnection(voiceChannel);
-                    }
-                } catch (Exception ex) {
-                    Chat.sendMessage(sender.getAsMention() + " The bot is not in a voice channel!", channel, 10);
-                    return true;
-                }
+                Chat.sendMessage(sender.getAsMention() + " The bot is not in a voice channel!", channel, 10);
+                return true;
             }
             if (!guild.getSelfMember().getVoiceState().getChannel().equals(sender.getVoiceState().getChannel())) {
                 Chat.sendMessage(sender.getAsMention() + " You must be in the music channel in order to play songs!", channel, 10);

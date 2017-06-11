@@ -1,5 +1,6 @@
 package com.xaosia.dragonbot.commands;
 
+import com.xaosia.dragonbot.commands.general.HelpCommand;
 import com.xaosia.dragonbot.commands.general.MemeCommand;
 import com.xaosia.dragonbot.commands.general.uhcfriends.SeniorsCommand;
 import com.xaosia.dragonbot.commands.management.*;
@@ -121,6 +122,7 @@ public class CommandHandler extends ListenerAdapter {
     public void registerCommands() {
 
         //general
+        cmds.add(new HelpCommand());
         cmds.add(new MemeCommand());
         cmds.add(new SeniorsCommand());
 

@@ -20,9 +20,6 @@ public class VoiceEvents extends ListenerAdapter {
             if (Dragon.getMusicManager().hasPlayer(event.getGuild().getId())) {
                 Dragon.getMusicManager().getPlayer(event.getGuild().getId()).getPlaylist().clear();
                 Dragon.getMusicManager().getPlayer(event.getGuild().getId()).skip();
-            }
-        } else {
-            if (event.getChannelLeft().getMembers().contains(event.getGuild().getMember(event.getJDA().getSelfUser())) && event.getChannelLeft().getMembers().size() < 2) {
                 event.getChannelLeft().getGuild().getAudioManager().closeAudioConnection();
             }
         }
