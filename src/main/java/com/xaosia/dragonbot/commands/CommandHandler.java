@@ -72,9 +72,10 @@ public class CommandHandler extends ListenerAdapter {
                 return;
             }
 
-            if (cmd.getType() == Command.CommandType.MUSIC && !GuildManager.getGuildConfig(guild).getMusicChannelId().equals(channel.getId())) {
+            /*if (cmd.getType() == Command.CommandType.MUSIC && !PermissionsUtil.canUseMusicCommand(guild, channel)) {
+                Dragon.getLog().info("Music Command");
                 return;
-            }
+            }*/
 
             if (!cmd.isEnabled()) {
                 //Command is not enabled, send user a message informing them

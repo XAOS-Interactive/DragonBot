@@ -28,6 +28,7 @@ public class SetMusicCommand extends Command {
 
         //chanel id is correct, save it and check if log channel is set, if so then set setup to true
         GuildManager.getGuildConfig(guild).setMusicChannelId(channelId);
+        GuildManager.getGuildConfig(guild).getMusicCommandChannels().add(channelId);
 
         try {
             GuildManager.getGuildConfig(guild).save();

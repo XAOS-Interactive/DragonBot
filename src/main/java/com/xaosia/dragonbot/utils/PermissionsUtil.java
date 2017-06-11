@@ -23,7 +23,7 @@ public class PermissionsUtil {
     }
 
     public static boolean canUseMusicCommand(Guild guild, Channel channel) {
-        return GuildManager.getGuildConfig(guild).getMusicChannelId().equals(channel.getId());
+        return GuildManager.getGuildConfig(guild).getMusicCommandChannels().contains(channel.getId());
     }
 
 }

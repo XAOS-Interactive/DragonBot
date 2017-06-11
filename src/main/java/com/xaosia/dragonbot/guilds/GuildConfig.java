@@ -24,7 +24,7 @@ public class GuildConfig {
     private static JSONArray fileObj;
 
     private String id, prefix, logChannel, commandId, musicChannelId, mutedRoleId;
-    private List<String> mutedUsers, trustedRoles;
+    private List<String> mutedUsers, trustedRoles, musicCommandChannels;
     private HashMap<String, String> memes;
     private boolean setup, filterSpam;
 
@@ -36,6 +36,7 @@ public class GuildConfig {
         this.musicChannelId = "";
         this.mutedRoleId = "";
 
+        this.musicCommandChannels = new ArrayList<>();
         this.mutedUsers = new ArrayList<>();
         this.trustedRoles = new ArrayList<>();
         this.memes = new HashMap<>();
@@ -78,6 +79,7 @@ public class GuildConfig {
         this.musicChannelId = file.musicChannelId;
         this.mutedRoleId = file.mutedRoleId;
 
+        this.musicCommandChannels = file.musicCommandChannels;
         this.mutedUsers = file.mutedUsers;
         this.trustedRoles = file.trustedRoles;
         this.memes = file.memes;
@@ -120,6 +122,10 @@ public class GuildConfig {
 
     public String getMusicChannelId() {
         return musicChannelId;
+    }
+
+    public List<String> getMusicCommandChannels() {
+        return musicCommandChannels;
     }
 
     public void setMusicChannelId(String musicChannelId) {
