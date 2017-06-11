@@ -125,6 +125,8 @@ public class CommandHandler extends ListenerAdapter {
 
         //management
         cmds.add(new AddTrustedCommand());
+        cmds.add(new RemoveTrustedCommand());
+        cmds.add(new RolesCommand());
         cmds.add(new SetCmdCommand());
         cmds.add(new SetLogCommand());
         cmds.add(new SetMusicCommand());
